@@ -1,14 +1,52 @@
 import argparse
 import asyncio
-import json
 import os
 import sys
 import time
-from .network import NetworkManager
+from .network import NetworkManager, SubFileClient
 from .parser import ZipParser
 from .direct import DirectExtractor
 from .payload import PayloadExtractor
 from .fasturl import fasturl
+
+async def find_and_extract(client, parser, filename, out_path, p_name):
+
+    files = parser.files
+    real_file = next((f for f in files if f.split('/')[-1].lower() == filename.lower()), None)
+    
+    if real_file:
+        extractor = DirectExtractor(client, parser)
+        await extractor.extract(real_file, out_path)
+        return True
+
+    if "payload.bin" in files:
+        extractor = PayloadExtractor(client, parser)
+        try:
+            await extractor.extract(p_name, out_path)
+            return True
+        except Exception as e:
+            return False
+    
+    nested_zips = [
+        f for f in files 
+        if f.lower().endswith('.zip') and files[f]['method'] == 0
+    ]
+    
+    for zip_name in nested_zips:
+        data_start = await parser.get_data_start(zip_name)
+        data_size = files[zip_name]['comp_size']
+        sub_client = SubFileClient(client, data_start, data_size)
+        sub_parser = ZipParser(sub_client)
+        
+
+        try:
+            await sub_parser.parse()
+            if await find_and_extract(sub_client, sub_parser, filename, out_path, p_name):
+                return True
+        except Exception as e:
+            continue
+
+    return False
 
 async def extract_async(url, filename, out_dir="."):
     try:
@@ -22,22 +60,11 @@ async def extract_async(url, filename, out_dir="."):
         
         async with NetworkManager(url) as client:
             parser = ZipParser(client)
-            files = await parser.parse()
+            await parser.parse()
             
-            real_file = next((f for f in files if f.lower() == filename.lower()), None)
+            success = await find_and_extract(client, parser, filename, out_path, p_name)
             
-            if real_file:
-                extractor = DirectExtractor(client, parser)
-                await extractor.extract(real_file, out_path)
-                return {
-                    "success": True,
-                    "output_path": os.path.abspath(out_path),
-                    "filename": filename
-                }
-                
-            elif "payload.bin" in files:
-                extractor = PayloadExtractor(client, parser)
-                await extractor.extract(p_name, out_path)
+            if success:
                 return {
                     "success": True,
                     "output_path": os.path.abspath(out_path),
@@ -46,10 +73,12 @@ async def extract_async(url, filename, out_dir="."):
             else:
                 return {
                     "success": False,
-                    "error": f"File '{filename}' not found in ROM"
+                    "error": f"File '{filename}' not found in ROM (searched nested archives)"
                 }
                 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return {
             "success": False,
             "error": str(e)

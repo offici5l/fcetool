@@ -12,9 +12,13 @@ class NetworkManager:
     async def __aenter__(self):
         self.session = aiohttp.ClientSession(
             connector=self.connector,
-            headers={"User-Agent": "FCE-Client/1.0"}
+            headers={
+                "User-Agent": "fcetool",
+                "Accept-Encoding": "identity" 
+            }
         )
         return self
+
 
     async def __aexit__(self, exc_type, exc, tb):
         if self.session:
@@ -47,3 +51,20 @@ class NetworkManager:
             except Exception:
                 if attempt == retries - 1: raise
                 await asyncio.sleep(1)
+
+
+class SubFileClient:
+    def __init__(self, parent_client, offset, size):
+        self.parent = parent_client
+        self.offset = offset
+        self.size = size
+        self.concurrency = parent_client.concurrency
+
+    async def get_size(self):
+        return self.size
+
+    async def fetch_range(self, start, end):
+        real_start = self.offset + start
+        real_end = self.offset + end
+        return await self.parent.fetch_range(real_start, real_end)
+

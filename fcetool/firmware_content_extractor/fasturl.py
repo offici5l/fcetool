@@ -20,4 +20,4 @@ def fasturl(url):
             if original in url:
                 return url.replace(original, config["fast_domain"])
     
-    return url
+    return url  # ما تغير → رجّع الأصلي
