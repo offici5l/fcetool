@@ -1,0 +1,44 @@
+name: Deploy api/ to Hugging Face Space
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'api/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Deploy api contents to Space root
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          rm -rf temp_root || true
+          mkdir temp_root
+          cp -r api/. temp_root/
+          cd temp_root
+          git init
+          git add .
+
+          git config user.name "GitHub Action Deploy"
+          git config user.email "deploy@github.com"
+
+          if git status --porcelain | grep -q . ; then
+            git commit -m "Auto-deploy from api/ folder (${GITHUB_SHA::7})"
+          else
+            echo "No changes in api/ folder → skipping deploy"
+            exit 0
+          fi
+
+          git push --force https://offici5l:${HF_TOKEN}@huggingface.co/spaces/offici5l/fcetool HEAD:main
+
+          echo "Deployment completed successfully!"
