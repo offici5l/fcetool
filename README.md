@@ -19,13 +19,6 @@ from fcetool import extract_async
 asyncio.run(extract_async("URL", "boot.img", "./output"))
 ```
 
-<div align="center">
-
-![MIT License](https://img.shields.io/badge/License-MIT-green.svg)
-
-</div>
-
-
 ## API Usage
 ```bash
 curl https://offici5l-fcetool.hf.space/extract \
@@ -34,6 +27,15 @@ curl https://offici5l-fcetool.hf.space/extract \
 ```
 **API Supported images only:** `boot.img`, `init_boot.img`, `dtbo.img`, `super_empty.img`, `vbmeta.img`, `vendor_boot.img`, `vendor_kernel_boot.img`, `preloader.img`, `recovery.img`
 
+## Telegram Usage
+Type @fcetoolbot <ROM_URL> <IMAGE_NAME> in any chat
 
 ## Web Interface
 https://offici5l.github.io/fcetool
+
+
+<div align="center">
+
+![MIT License](https://img.shields.io/badge/License-MIT-green.svg)
+
+</div>
