@@ -93,13 +93,17 @@ async def fetch_extraction_data(url: str, image_name: str) -> dict:
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
+   
+    first_name = escape_markdown(user.first_name)
+    bot_mention = escape_markdown(f"@{context.bot.username}")
+    
     welcome_msg = (
-        f"👋 *Welcome {escape_markdown(user.first_name)}*\n\n"
-        f"*FCE Tool Bot* enables you to extract firmware images from ROM.zip URL\\.\n\n"
+        f"👋 *Welcome {first_name}*\n\n"
+        f"*FCE Tool Bot* enables you to extract firmware images from ROM\\.zip URL\\.\n\n"
         f"*Usage Instructions:*\n"
-        f"Type `@{escape_markdown(context.bot.username)} <ROM_URL> <IMAGE_NAME>` in any chat\n\n"
+        f"Type {bot_mention} `<ROM_URL> <IMAGE_NAME>` in any chat\n\n"
         f"*Example:*\n"
-        f"`@{escape_markdown(context.bot.username)} https://example\\.com/firmware\\.zip boot\\.img`"
+        f"{bot_mention} `https://example\\.com/firmware\\.zip boot\\.img`"
     )
 
     buttons = [
@@ -115,6 +119,8 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode=ParseMode.MARKDOWN_V2,
         disable_web_page_preview=True
     )
+
+
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     supported_list = "\n".join([f"• `{escape_markdown(img)}`" for img in sorted(SUPPORTED_IMAGES)])
