@@ -50,6 +50,11 @@ async def find_and_extract(client, parser, filename, out_path, p_name):
 
 async def extract_async(url, filename, out_dir="."):
     try:
+        if not url.startswith(('http://', 'https://')):
+            return {
+                "success": False,
+                "error": "Invalid URL: Please provide a valid URL starting with http:// or https://"
+            }
         url = fasturl(url)
 
         if not os.path.exists(out_dir):
