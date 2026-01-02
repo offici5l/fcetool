@@ -2,3 +2,7 @@
 
 - fix: 400 gzip error
 - add support for (nested ZIPs)
+
+### Version 1.0.2:
+
+- minor fixes
