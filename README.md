@@ -14,7 +14,7 @@ fcetool <URL> <FILENAME>
 ## Usage in Python Code
 ```python
 import asyncio
-from fcetool import extract_async
+from firmware_content_extractor import extract_async
 
 asyncio.run(extract_async("URL", "boot.img", "./output"))
 ```
