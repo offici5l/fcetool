@@ -34,7 +34,7 @@ CHANNEL_URL = "https://t.me/Offici5l_Channel"
 SUPPORTED_IMAGES = {
     "boot.img", "init_boot.img", "dtbo.img", "super_empty.img",
     "vbmeta.img", "vendor_boot.img", "vendor_kernel_boot.img",
-    "preloader.img", "recovery.img"
+    "preloader.img", "recovery.img", "logo.img‎"
 }
 
 logging.basicConfig(

@@ -7,7 +7,8 @@ const SUPPORTED_FILES = [
     "vendor_boot.img", 
     "vendor_kernel_boot.img", 
     "preloader.img", 
-    "recovery.img"
+    "recovery.img",
+    "logo.img‎"
 ];
 
 const API_CONFIG = {
