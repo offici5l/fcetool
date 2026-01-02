@@ -43,14 +43,19 @@ logging.basicConfig(
 )
 
 class HealthCheckHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
+    def _send_success(self):
         self.send_response(200)
+        self.send_header('Content-Type', 'text/plain; charset=utf-8')
+        self.send_header('Content-Length', '21')
         self.end_headers()
+    
+    def do_GET(self):
+        self._send_success()
         self.wfile.write(b"FCE Tool Bot is Alive!")
 
     def do_HEAD(self):
-        self.send_response(200)
-        self.end_headers()
+        self._send_success()
+    
     def log_message(self, format, *args):
         pass
 
