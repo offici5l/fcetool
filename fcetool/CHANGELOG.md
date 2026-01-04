@@ -6,3 +6,7 @@
 ### Version 1.0.2:
 
 - minor fixes
+
+### Version 1.0.3:
+
+- Added Range request validation
