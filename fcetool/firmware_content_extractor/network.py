@@ -19,19 +19,25 @@ class NetworkManager:
         )
         return self
 
-
     async def __aexit__(self, exc_type, exc, tb):
         if self.session:
             await self.session.close()
 
     async def get_size(self):
         try:
-            async with self.session.head(self.url) as resp:
+            async with self.session.head(self.url, allow_redirects=True) as resp:
+                accept_ranges = resp.headers.get("Accept-Ranges", "none")
+                if accept_ranges == "none":
+                    raise Exception(
+                        f"Server does not support Range requests. "
+                        f"Accept-Ranges: {accept_ranges}. "
+                    )
+                
                 if resp.status == 200:
-                    self.file_size = int(resp.headers.get("Content-Length", 0))
+                    self.file_size = int(resp.headers.get("Content-Length", 0))                    
                     return self.file_size
-            
-            async with self.session.get(self.url, headers={"Range": "bytes=0-0"}) as resp:
+
+            async with self.session.get(self.url, headers={"Range": "bytes=0-0"}, allow_redirects=True) as resp:
                 if resp.status in [200, 206]:
                     val = resp.headers.get("Content-Range", "").split("/")
                     self.file_size = int(val[1]) if len(val) > 1 else int(resp.headers.get("Content-Length", 0))
@@ -44,12 +50,20 @@ class NetworkManager:
         headers = {"Range": f"bytes={start}-{end-1}"}
         for attempt in range(retries):
             try:
-                async with self.session.get(self.url, headers=headers) as resp:
-                    if resp.status not in [200, 206]:
+                async with self.session.get(self.url, headers=headers, allow_redirects=True) as resp:
+                    if resp.status == 206:
+                        return await resp.read()
+                    elif resp.status == 200:
+                        raise Exception(
+                            f"Server does not support Range requests. "
+                            f"Server returned HTTP 200 instead of 206 Partial Content. "
+                            f"Requested range: {start}-{end-1}"
+                        )
+                    else:
                         raise Exception(f"HTTP {resp.status}")
-                    return await resp.read()
             except Exception:
-                if attempt == retries - 1: raise
+                if attempt == retries - 1:
+                    raise
                 await asyncio.sleep(1)
 
 
@@ -67,4 +81,3 @@ class SubFileClient:
         real_start = self.offset + start
         real_end = self.offset + end
         return await self.parent.fetch_range(real_start, real_end)
-
