@@ -2,10 +2,8 @@ import logging
 import re
 import hashlib
 import os
-import threading
 import signal
 import sys
-from http.server import HTTPServer, BaseHTTPRequestHandler
 from uuid import uuid4
 from telegram import (
     Update, 
@@ -28,6 +26,9 @@ TOKEN = os.getenv("BOT_TOKEN")
 if not TOKEN:
     exit("Error: BOT_TOKEN not found in environment variables!")
 
+RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL", "https://fcetool.onrender.com")
+PORT = int(os.environ.get("PORT", 8080))
+
 API_URL = "https://offici5l-fcetool.hf.space/extract"
 GITHUB_URL = "https://github.com/offici5l/fcetool"
 WEB_URL = "https://offici5l.github.io/fcetool"
@@ -44,43 +45,6 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
-
-class HealthCheckHandler(BaseHTTPRequestHandler):
-    
-    def _send_response(self, include_body=True):
-        self.send_response(200)
-        self.send_header('Content-Type', 'text/plain; charset=utf-8')
-        
-        body = b"FCE Tool Bot is Alive!"
-        
-        if include_body:
-            self.send_header('Content-Length', str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-        else:
-            self.send_header('Content-Length', str(len(body)))
-            self.end_headers()
-
-    def do_GET(self):
-        logger.info(f"GET request received: {self.path}")
-        self._send_response(include_body=True)
-
-    def do_HEAD(self):
-        logger.info(f"HEAD request received: {self.path}")
-        self._send_response(include_body=False)
-
-    def log_message(self, format, *args):
-        pass
-
-def start_fake_server():
-    port = int(os.environ.get("PORT", 8080))
-    try:
-        server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
-        logger.info(f"Health check server running on 0.0.0.0:{port}")
-        server.serve_forever()
-    except Exception as e:
-        logger.error(f"Failed to start health check server: {e}")
-        sys.exit(1)
 
 def signal_handler(sig, frame):
     logger.info("Shutdown signal received. Stopping bot gracefully...")
@@ -354,12 +318,13 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
         await update.inline_query.answer(results, cache_time=0)
 
+async def health_check(request):
+    from aiohttp import web
+    return web.Response(text="FCE Tool Bot is Alive!", status=200)
+
 def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-    
-    health_thread = threading.Thread(target=start_fake_server, daemon=True)
-    health_thread.start()
     
     app = Application.builder().token(TOKEN).build()
     
@@ -368,9 +333,16 @@ def main():
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(InlineQueryHandler(inline_query))
     
-    logger.info("FCE Tool Bot is now running!")
+    logger.info(f"Starting FCE Tool Bot with webhook on port {PORT}")
+    logger.info(f"Webhook URL: {RENDER_EXTERNAL_URL}/{TOKEN}")
     
-    app.run_polling(drop_pending_updates=True)
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        url_path=TOKEN,
+        webhook_url=f"{RENDER_EXTERNAL_URL}/{TOKEN}",
+        drop_pending_updates=True
+    )
 
 if __name__ == "__main__":
     main()
