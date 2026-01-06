@@ -34,7 +34,7 @@ app.add_middleware(
     allow_methods=["*"],
 )
 
-SUPPORTED_IMAGES = {
+SUPPORTED_TARGETS = {
     "boot.img", "init_boot.img", "dtbo.img", "super_empty.img",
     "vbmeta.img", "vendor_boot.img", "vendor_kernel_boot.img",
     "preloader.img", "recovery.img", "logo.img"
@@ -72,12 +72,12 @@ def generate_storage_path(url: str) -> str:
     full_path = f"{domain}/{path}"
     return full_path
 
-def check_file_in_dataset(storage_path: str, filename: str) -> bool:
+def check_file_in_dataset(storage_path: str, target: str) -> bool:
     if not hf_api:
         return False
     
     try:
-        path_in_repo = f"{storage_path}/{filename}"
+        path_in_repo = f"{storage_path}/{target}"
         exists = hf_api.file_exists(
             repo_id=DATASET_REPO,
             filename=path_in_repo,
@@ -86,18 +86,18 @@ def check_file_in_dataset(storage_path: str, filename: str) -> bool:
         return exists
     except Exception:
         try:
-            url = f"https://huggingface.co/datasets/{DATASET_REPO}/resolve/main/{storage_path}/{filename}"
+            url = f"https://huggingface.co/datasets/{DATASET_REPO}/resolve/main/{storage_path}/{target}"
             response = requests.get(url, stream=True, timeout=5)
             response.close()
             return response.status_code == 200
         except:
             return False
 
-async def upload_to_dataset(file_path: str, storage_path: str, filename: str) -> str:
+async def upload_to_dataset(file_path: str, storage_path: str, target: str) -> str:
     if not hf_api:
         raise Exception("HF_TOKEN not configured")
     
-    path_in_repo = f"{storage_path}/{filename}"
+    path_in_repo = f"{storage_path}/{target}"
     
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(
@@ -107,7 +107,7 @@ async def upload_to_dataset(file_path: str, storage_path: str, filename: str) ->
             path_in_repo=path_in_repo,
             repo_id=DATASET_REPO,
             repo_type="dataset",
-            commit_message=f"Add {filename} from {storage_path}"
+            commit_message=f"Add {target} from {storage_path}"
         )
     )
     
@@ -146,7 +146,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.post("/extract")
 @limiter.limit("3/minute")
-async def extract_images(request: Request, payload: dict):
+async def extract_target(request: Request, payload: dict):
     if extraction_semaphore.locked():
         return JSONResponse(
             status_code=429,
@@ -157,56 +157,56 @@ async def extract_images(request: Request, payload: dict):
         )
 
     url = payload.get("url")
-    filename = payload.get("images")
+    target = payload.get("target")
 
-    if not url or not filename:
+    if not url or not target:
         return JSONResponse(
             status_code=400,
             content={
                 "status": "error",
-                "message": "Missing 'url' or 'images' parameter in JSON body."
+                "message": "Missing 'url' or 'target' parameter in JSON body."
             }
         )
 
-    if filename not in SUPPORTED_IMAGES:
+    if target not in SUPPORTED_TARGETS:
         return JSONResponse(
             status_code=400,
             content={
                 "status": "error",
-                "message": f"Unsupported image type. Supported: {', '.join(SUPPORTED_IMAGES)}"
+                "message": f"Unsupported target type. Supported: {', '.join(SUPPORTED_TARGETS)}"
             }
         )
 
     start_time = time.time()
     storage_path = generate_storage_path(url)
     
-    if hf_api and check_file_in_dataset(storage_path, filename):
-        cache_url = f"https://huggingface.co/datasets/{DATASET_REPO}/resolve/main/{storage_path}/{filename}"
+    if hf_api and check_file_in_dataset(storage_path, target):
+        cache_url = f"https://huggingface.co/datasets/{DATASET_REPO}/resolve/main/{storage_path}/{target}"
         return JSONResponse(
             status_code=200,
             content={
                 "status": "cached",
                 "message": "File already exists in dataset (from cache)",
                 "download_url": cache_url,
-                "filename": filename,
+                "target": target,
                 "duration_seconds": int(time.time() - start_time)
             }
         )
 
     folder_name = storage_path.replace('/', '_')
     out_dir = os.path.join(TEMP_DIR, folder_name)
-    raw_file_path = os.path.normpath(os.path.join(out_dir, filename))
+    raw_file_path = os.path.normpath(os.path.join(out_dir, target))
 
     os.makedirs(out_dir, exist_ok=True)
     
     try:
         async with extraction_semaphore:
-            result = await fce.extract_async(url, filename, out_dir)
+            result = await fce.extract_async(url, target, out_dir)
         
         if result.get("success") and os.path.exists(raw_file_path):
             if hf_api:
                 try:
-                    download_url = await upload_to_dataset(raw_file_path, storage_path, filename)
+                    download_url = await upload_to_dataset(raw_file_path, storage_path, target)
                     
                     os.remove(raw_file_path)
                     if os.path.exists(out_dir) and not os.listdir(out_dir):
@@ -221,7 +221,7 @@ async def extract_images(request: Request, payload: dict):
                             "status": "completed",
                             "message": "Extraction completed and uploaded to dataset",
                             "download_url": download_url,
-                            "filename": filename,
+                            "target": target,
                             "duration_seconds": duration
                         }
                     )
@@ -278,17 +278,17 @@ async def extract_images(request: Request, payload: dict):
             }
         )
 
-@app.get("/files/{storage_path:path}/{filename}")
-async def get_file_info(storage_path: str, filename: str):
-    if check_file_in_dataset(storage_path, filename):
-        download_url = f"https://huggingface.co/datasets/{DATASET_REPO}/resolve/main/{storage_path}/{filename}"
+@app.get("/files/{storage_path:path}/{target}")
+async def get_file_info(storage_path: str, target: str):
+    if check_file_in_dataset(storage_path, target):
+        download_url = f"https://huggingface.co/datasets/{DATASET_REPO}/resolve/main/{storage_path}/{target}"
         return JSONResponse(
             status_code=200,
             content={
                 "status": "exists",
                 "message": "File found in dataset",
                 "download_url": download_url,
-                "filename": filename
+                "target": target
             }
         )
     else:

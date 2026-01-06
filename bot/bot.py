@@ -31,7 +31,7 @@ GITHUB_URL = "https://github.com/offici5l/fcetool"
 WEB_URL = "https://offici5l.github.io/fcetool"
 CHANNEL_URL = "https://t.me/Offici5l_Channel"
 
-SUPPORTED_IMAGES = {
+SUPPORTED_TARGETS = {
     "boot.img", "init_boot.img", "dtbo.img", "super_empty.img",
     "vbmeta.img", "vendor_boot.img", "vendor_kernel_boot.img",
     "preloader.img", "recovery.img", "logo.img"
@@ -79,8 +79,8 @@ def is_valid_url(url: str) -> bool:
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
     return re.match(regex, url) is not None
 
-async def fetch_extraction_data(url: str, image_name: str) -> dict:
-    payload = {"url": url, "images": image_name}
+async def fetch_extraction_data(url: str, target_name: str) -> dict:
+    payload = {"url": url, "target": target_name}
 
     async with httpx.AsyncClient(timeout=45.0) as client:
         try:
@@ -109,9 +109,9 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     welcome_msg = (
         f"👋 *Welcome {first_name}*\n\n"
-        f"*FCE Tool Bot* enables you to extract firmware images from ROM\\.zip URL\\.\n\n"
+        f"*FCE Tool Bot* enables you to extract firmware files from ROM\\.zip URL\\.\n\n"
         f"*Usage Instructions:*\n"
-        f"Type {bot_mention} `<ROM_URL> <IMAGE_NAME>` in any chat\n\n"
+        f"Type {bot_mention} `<ROM_URL> <TARGET_FILE>` in any chat\n\n"
         f"*Example:*\n"
         f"{bot_mention} `https://example\\.com/firmware\\.zip boot\\.img`"
     )
@@ -133,12 +133,12 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    supported_list = "\n".join([f"• `{escape_markdown(img)}`" for img in sorted(SUPPORTED_IMAGES)])
+    supported_list = "\n".join([f"• `{escape_markdown(target)}`" for target in sorted(SUPPORTED_TARGETS)])
     help_msg = (
         f"📖 *Help \\& Documentation*\n\n"
         f"*Syntax:*\n"
-        f"`@{escape_markdown(context.bot.username)} <ROM_URL> <IMAGE_NAME>`\n\n"
-        f"*Supported Image Types:*\n"
+        f"`@{escape_markdown(context.bot.username)} <ROM_URL> <TARGET_FILE>`\n\n"
+        f"*Supported Target Files:*\n"
         f"{supported_list}\n\n"
         f"*Quick Links:*\n"
         f"🌐 [Web Interface]({escape_markdown(WEB_URL)})\n"
@@ -173,9 +173,9 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
             InlineQueryResultArticle(
                 id=str(uuid4()),
                 title="👋 FCE Tool Ready",
-                description="Type <ROM_URL> <IMAGE_NAME> to begin extraction",
+                description="Type <ROM_URL> <TARGET_FILE> to begin extraction",
                 input_message_content=InputTextMessageContent(
-                    f"ℹ️ *FCE Tool Usage Guide*\n\nSyntax: `@{escape_markdown(context.bot.username)} <ROM_URL> <IMAGE_NAME>`",
+                    f"ℹ️ *FCE Tool Usage Guide*\n\nSyntax: `@{escape_markdown(context.bot.username)} <ROM_URL> <TARGET_FILE>`",
                     parse_mode=ParseMode.MARKDOWN_V2
                 ),
                 thumbnail_url="https://img.icons8.com/color/96/console.png"
@@ -186,7 +186,7 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     parts = query.split()
     url = parts[0]
-    image_name = parts[1] if len(parts) > 1 else ""
+    target_name = parts[1] if len(parts) > 1 else ""
 
     if not is_valid_url(url):
         results = [
@@ -204,17 +204,17 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.inline_query.answer(results, cache_time=0)
         return
 
-    if image_name and image_name not in SUPPORTED_IMAGES:
+    if target_name and target_name not in SUPPORTED_TARGETS:
         results = [
             InlineQueryResultArticle(
                 id=str(uuid4()),
-                title=f"❌ Unsupported Image: {image_name}",
-                description="View list of supported image types",
+                title=f"❌ Unsupported Target: {target_name}",
+                description="View list of supported target files",
                 input_message_content=InputTextMessageContent(
-                    f"❌ *Unsupported Image Type*\n\n"
-                    f"📂 *Requested:* `{escape_markdown(image_name)}`\n\n"
-                    f"*Supported Image Types:*\n" + 
-                    "\n".join([f"• `{escape_markdown(img)}`" for img in sorted(SUPPORTED_IMAGES)]),
+                    f"❌ *Unsupported Target File*\n\n"
+                    f"📂 *Requested:* `{escape_markdown(target_name)}`\n\n"
+                    f"*Supported Target Files:*\n" + 
+                    "\n".join([f"• `{escape_markdown(target)}`" for target in sorted(SUPPORTED_TARGETS)]),
                     parse_mode=ParseMode.MARKDOWN_V2
                 ),
                 thumbnail_url="https://img.icons8.com/color/96/cancel.png"
@@ -223,12 +223,12 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.inline_query.answer(results, cache_time=0)
         return
 
-    if image_name in SUPPORTED_IMAGES:
-        api_data = await fetch_extraction_data(url, image_name)
+    if target_name in SUPPORTED_TARGETS:
+        api_data = await fetch_extraction_data(url, target_name)
 
         if api_data and api_data.get("status") in ["cached", "completed"]:
             download_url = api_data.get("download_url")
-            filename = api_data.get("filename", image_name)
+            target = api_data.get("target", target_name)
             duration = str(api_data.get("duration_seconds", "0"))
             status_text = "Retrieved from cache" if api_data.get("status") == "cached" else "Extraction completed"
 
@@ -236,8 +236,8 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             content = (
                 f"✅ *Extraction Successful*\n\n"
-                f"📂 *Filename:* `{escape_markdown(filename)}`\n"
-                f"🔗 *Filename extracted from:* [URL]({escape_markdown(url)})\n"
+                f"📂 *Target:* `{escape_markdown(target)}`\n"
+                f"🔗 *Target extracted from:* [URL]({escape_markdown(url)})\n"
                 f"⏱ *Processing Time:* `{escape_markdown(duration)}s`\n"
                 f"📊 *Status:* {escape_markdown(status_text)}\n\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
@@ -247,8 +247,8 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             results = [
                 InlineQueryResultArticle(
-                    id=hashlib.md5(f"{url}{image_name}".encode()).hexdigest(),
-                    title=f"✅ Extract {image_name}",
+                    id=hashlib.md5(f"{url}{target_name}".encode()).hexdigest(),
+                    title=f"✅ Extract {target_name}",
                     description=f"{status_text} • Processing: {duration}s",
                     input_message_content=InputTextMessageContent(
                         content,
@@ -270,13 +270,13 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
             results = [
                 InlineQueryResultArticle(
                     id=str(uuid4()),
-                    title=f"❌ Extraction Failed: {image_name}",
+                    title=f"❌ Extraction Failed: {target_name}",
                     description=f"{error_msg[:80]}",
                     input_message_content=InputTextMessageContent(
                         f"❌ *Extraction Failed*\n\n"
-                        f"📂 *Requested File:* `{escape_markdown(image_name)}`\n"
+                        f"📂 *Requested File:* `{escape_markdown(target_name)}`\n"
                         f"⚠️ *Error Details:* {escape_markdown(error_msg)}\n\n"
-                        f"💡 *Suggestion:* This image may not exist in the specified ROM\\. Please verify the image name and try again\\.\n\n"
+                        f"💡 *Suggestion:* This file may not exist in the specified ROM\\. Please verify the target name and try again\\.\n\n"
                         f"🔧 *Alternative:* Try using the [Web Interface]({escape_markdown(WEB_URL)}) for more options\\.",
                         parse_mode=ParseMode.MARKDOWN_V2,
                         disable_web_page_preview=True
@@ -311,10 +311,10 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
         results = [
             InlineQueryResultArticle(
                 id=str(uuid4()),
-                title=f"⏳ Awaiting Image Name...",
-                description="Continue typing the image name (e.g., boot.img)",
+                title=f"⏳ Awaiting Target File...",
+                description="Continue typing the target file name (e.g., boot.img)",
                 input_message_content=InputTextMessageContent(
-                    "⌨️ *Input Required*\n\nPlease specify the image name you wish to extract\\.\n\n*Example:* boot\\.img",
+                    "⌨️ *Input Required*\n\nPlease specify the target file you wish to extract\\.\n\n*Example:* boot\\.img",
                     parse_mode=ParseMode.MARKDOWN_V2
                 ),
                 thumbnail_url="https://img.icons8.com/color/96/typing.png"

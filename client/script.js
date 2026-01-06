@@ -5,25 +5,25 @@ const downloadSection = document.getElementById('downloadSection');
 const downloadBtn = document.getElementById('downloadBtn');
 const newExtractionBtn = document.getElementById('newExtractionBtn');
 const durationText = document.getElementById('durationText');
-const filenameText = document.getElementById('filenameText');
+const targetText = document.getElementById('targetText');
 const statusText = document.getElementById('statusText');
 const urlInput = document.getElementById('firmwareUrl');
-const partitionSelect = document.getElementById('partitionSelect');
+const targetSelect = document.getElementById('targetSelect');
 
 document.addEventListener('DOMContentLoaded', () => {
-    populatePartitionSelect();
+    populateTargetSelect();
     setupEventListeners();
     setLoading(false);
 });
 
-function populatePartitionSelect() {
-    if (!partitionSelect) return;
+function populateTargetSelect() {
+    if (!targetSelect) return;
 
     SUPPORTED_FILES.forEach(key => {
         const option = document.createElement('option');
         option.value = key;
         option.textContent = key;
-        partitionSelect.appendChild(option);
+        targetSelect.appendChild(option);
     });
 }
 
@@ -38,16 +38,16 @@ async function handleSubmit(e) {
     hideMessage();
     hideDownloadSection();
 
-    const selectedPartition = partitionSelect.value;
+    const selectedTarget = targetSelect.value;
 
-    if (!selectedPartition) {
-        showMessage('<i class="fas fa-exclamation-circle"></i> Please select a partition image to extract', 'error');
+    if (!selectedTarget) {
+        showMessage('<i class="fas fa-exclamation-circle"></i> Please select a target file to extract', 'error');
         return;
     }
 
     const payload = {
         url: urlInput.value,
-        images: selectedPartition
+        target: selectedTarget
     };
 
     setLoading(true);
@@ -85,9 +85,9 @@ function handleSuccess(data) {
     }
 
     downloadBtn.href = data.download_url;
-    downloadBtn.download = data.filename;
+    downloadBtn.download = data.target;
     durationText.textContent = `${data.duration_seconds}s`;
-    filenameText.textContent = data.filename;
+    targetText.textContent = data.target;
 
     hideForm();
     showDownloadSection();
@@ -97,10 +97,8 @@ function handleError(data, statusCode) {
     let errorIcon = '<i class="fas fa-exclamation-circle"></i>';
     let errorType = 'error';
     
-    // The backend now always returns a 'message' field in the JSON body
     let errorText = data.message || data.detail || 'An unexpected error occurred';
 
-    // Handle specific status codes based on the new backend logic
     if (statusCode === 429) {
         errorIcon = '<i class="fas fa-clock"></i>';
         errorType = 'warning';
@@ -143,13 +141,13 @@ function resetForm() {
     hideMessage();
     showForm();
     urlInput.value = '';
-    partitionSelect.value = '';
+    targetSelect.value = '';
 }
 
 function setLoading(loading) {
     submitBtn.disabled = loading;
     urlInput.disabled = loading;
-    partitionSelect.disabled = loading;
+    targetSelect.disabled = loading;
 
     if (loading) {
         submitBtn.innerHTML = `

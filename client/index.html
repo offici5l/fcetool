@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Firmware Content Extractor | FCE</title>
-    <meta name="description" content="Extract firmware partitions directly without downloading the entire ROM.">
+    <meta name="description" content="Extract firmware Content directly without downloading the entire ROM.">
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
@@ -36,9 +36,9 @@
                         </div>
 
                         <div class="input-group">
-                            <label class="input-label">Partition Image</label>
-                            <select id="partitionSelect" name="partition" required class="select-field">
-                                <option value="" disabled selected>Choose partition...</option>
+                            <label class="input-label">Target File</label>
+                            <select id="targetSelect" name="target" required class="select-field">
+                                <option value="" disabled selected>Choose target file...</option>
                             </select>
                         </div>
                     </div>
@@ -70,8 +70,8 @@
                             <span id="durationText" class="detail-value">-</span>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Filename</span>
-                            <span id="filenameText" class="detail-value">-</span>
+                            <span class="detail-label">Target</span>
+                            <span id="targetText" class="detail-value">-</span>
                         </div>
                     </div>
 
