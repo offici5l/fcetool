@@ -1,6 +1,5 @@
 import os
 import re
-import logging
 import threading
 import uuid
 import httpx
@@ -17,9 +16,6 @@ SUPPORTED_TARGETS = {
     "vbmeta.img", "vendor_boot.img", "vendor_kernel_boot.img",
     "preloader.img", "recovery.img", "logo.img"
 }
-
-logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 app_server = Flask(__name__)
 
@@ -43,10 +39,10 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     parts = query.split()
-    
+
     if len(parts) == 0:
         return
-    
+
     if len(parts) == 1:
         url = parts[0]
         if not validate_url(url):
@@ -85,7 +81,7 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     url, target = parts[0], parts[1]
-    
+
     if not validate_url(url):
         results = [
             InlineQueryResultArticle(
@@ -103,7 +99,7 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
         await update.inline_query.answer(results, cache_time=1)
         return
-    
+
     if target not in SUPPORTED_TARGETS:
         results = [
             InlineQueryResultArticle(
@@ -145,15 +141,14 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def chosen_result(update: Update, context: ContextTypes.DEFAULT_TYPE):
     result = update.chosen_inline_result
     inline_id = result.inline_message_id
-    
+
     if not inline_id:
-        logger.error("No inline_message_id yet, retrying...")
         return
 
     parts = result.query.split()
     if len(parts) < 2:
         return
-        
+
     url, target = parts[0], parts[1]
 
     try:
@@ -165,13 +160,13 @@ async def chosen_result(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
             response = await client.post(API_URL, json={"url": url, "target": target})
-            
+
             if response.status_code == 200:
                 data = response.json()
                 dl_url = data.get("download_url", "#")
-                
+
                 btn = InlineKeyboardMarkup([[InlineKeyboardButton("📥 Download File", url=dl_url)]])
-                
+
                 await context.bot.edit_message_text(
                     inline_message_id=inline_id,
                     text=(
@@ -195,12 +190,18 @@ async def chosen_result(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     parse_mode=ParseMode.MARKDOWN
                 )
     except Exception as e:
-        logger.error(f"Error: {e}")
         try:
             await context.bot.edit_message_text(
                 inline_message_id=inline_id,
-                text=f"❌ **Error Occurred**\n━━━━━━━━━━━━━━━━━━\n⚠️ `{str(e)}`",
-                parse_mode=ParseMode.MARKDOWN
+                text=(
+                    f"❌ **Error Occurred**\n"
+                    f"━━━━━━━━━━━━━━━━━━\n"
+                    f"⚠️ `{str(e)}`\n\n"
+                    f"🌐 **Alternative:**\n"
+                    f"Try the [Web Interface](https://offici5l.github.io/fcetool)"
+                ),
+                parse_mode=ParseMode.MARKDOWN,
+                disable_web_page_preview=False
             )
         except:
             pass
@@ -209,11 +210,11 @@ async def main_async():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(InlineQueryHandler(inline_query))
     app.add_handler(ChosenInlineResultHandler(chosen_result))
-    
+
     await app.initialize()
     await app.start()
     await app.updater.start_polling()
-    
+
     await asyncio.Event().wait()
 
 def main():
