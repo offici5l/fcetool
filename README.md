@@ -36,6 +36,8 @@ https://offici5l.github.io/fcetool
 
 <div align="center">
 
+[![View Code Wiki](https://www.gstatic.com/_/boq-sdlc-agents-ui/_/r/YUi5dj2UWvE.svg)](https://codewiki.google/github.com/offici5l/fce)
+
 ![MIT License](https://img.shields.io/badge/License-MIT-green.svg)
 
 </div>
