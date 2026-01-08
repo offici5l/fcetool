@@ -7,7 +7,7 @@ import asyncio
 from flask import Flask
 from telegram import Update, InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
-from telegram.ext import Application, InlineQueryHandler, ChosenInlineResultHandler, ContextTypes
+from telegram.ext import Application, InlineQueryHandler, ChosenInlineResultHandler, ContextTypes, CommandHandler
 
 TOKEN = os.getenv("BOT_TOKEN")
 API_URL = "https://offici5l-fcetool.hf.space/extract"
@@ -138,6 +138,106 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     await update.inline_query.answer(results, cache_time=1)
 
+
+async def start_help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    targets_list = ", ".join(sorted(SUPPORTED_TARGETS))
+    bot_username = context.bot.username
+    
+    welcome_text = (
+        f"👋 **Welcome to Fcetool Bot!**\n\n"
+        f"I can extract specific file (like boot.img) from firmware/ROM (.zip) URLs directly.\n\n"
+        f"🛠 **How to use:**\n\n"
+        f"1️⃣ **Direct Command:**\n"
+        f"`/extract <URL> <TARGET>`\n\n"
+        f"2️⃣ **Inline Mode:**\n"
+        f"Type in any chat:\n"
+        f"`@{bot_username} <URL> <TARGET>`\n\n"
+        f"3️⃣ **Web Interface:**\n"
+        f"[offici5l.github.io/fcetool](https://offici5l.github.io/fcetool)\n\n"
+        f"✅ **Supported Targets:**\n"
+        f"`{targets_list}`\n\n"
+        f"Open Source: [github](https://github.com/offici5l/fcetool)\n"
+        f"By: [offici5l](https://t.me/Offici5l_Channel)"
+    )
+
+    await update.message.reply_text(
+        text=welcome_text,
+        parse_mode=ParseMode.MARKDOWN,
+        disable_web_page_preview=True
+    )
+
+
+async def extract_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args or len(context.args) < 2:
+        await update.message.reply_text(
+            f"⚠️ **Usage:**\n`/extract URL TARGET`\n\n"
+            f"✅ **Supported targets:**\n`{', '.join(sorted(SUPPORTED_TARGETS))}`",
+            parse_mode=ParseMode.MARKDOWN
+        )
+        return
+
+    url = context.args[0]
+    target = context.args[1]
+
+    # Validate URL
+    if not validate_url(url):
+        await update.message.reply_text("❌ Invalid URL. Please start with http:// or https://")
+        return
+
+    # Validate Target
+    if target not in SUPPORTED_TARGETS:
+        await update.message.reply_text(
+            f"❌ **Unsupported Target**\n"
+            f"⚠️ `{target}` is not supported\n"
+            f"✅ **Supported:** `{', '.join(sorted(SUPPORTED_TARGETS))}`",
+            parse_mode=ParseMode.MARKDOWN
+        )
+        return
+
+    # Send waiting message
+    status_msg = await update.message.reply_text(
+        f"⚙️ **Processing...**\n━━━━━━━━━━━━━━━━━━\n🎯 **Target:** `{target}`\n⏳ **Status:** `Connecting to server...`",
+        parse_mode=ParseMode.MARKDOWN
+    )
+
+    try:
+        async with httpx.AsyncClient(timeout=300) as client:
+            response = await client.post(API_URL, json={"url": url, "target": target})
+
+            if response.status_code == 200:
+                data = response.json()
+                dl_url = data.get("download_url", "#")
+                
+                btn = InlineKeyboardMarkup([[InlineKeyboardButton("📥 Download File", url=dl_url)]])
+
+                await status_msg.edit_text(
+                    text=(
+                        f"✅ **Extraction Completed**\n"
+                        f"━━━━━━━━━━━━━━━━━━\n"
+                        f"📂 **File:** `{target}`\n"
+                        f"⏱ **Time:** `{data.get('duration_seconds', 'N/A')}s`\n"
+                        f"━━━━━━━━━━━━━━━━━━\n"
+                        f"Open source: [fcetool](https://github.com/offici5l/fcetool)\n"
+                        f"By: [offici5l](https://t.me/Offici5l_Channel)"
+                    ),
+                    reply_markup=btn,
+                    parse_mode=ParseMode.MARKDOWN,
+                    disable_web_page_preview=True
+                )
+            else:
+                err = response.json().get("message", "API Error")
+                await status_msg.edit_text(
+                    f"❌ **Failed**\n━━━━━━━━━━━━━━━━━━\n⚠️ **Error:** `{err}`",
+                    parse_mode=ParseMode.MARKDOWN
+                )
+
+    except Exception as e:
+        await status_msg.edit_text(
+            f"❌ **Error Occurred**\n━━━━━━━━━━━━━━━━━━\n⚠️ `{str(e)}`",
+            parse_mode=ParseMode.MARKDOWN
+        )
+
+
 async def chosen_result(update: Update, context: ContextTypes.DEFAULT_TYPE):
     result = update.chosen_inline_result
     inline_id = result.inline_message_id
@@ -208,6 +308,13 @@ async def chosen_result(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def main_async():
     app = Application.builder().token(TOKEN).build()
+
+    app.add_handler(CommandHandler("start", start_help_command))
+
+    app.add_handler(CommandHandler("help", start_help_command))
+
+    app.add_handler(CommandHandler("extract", extract_command))
+
     app.add_handler(InlineQueryHandler(inline_query))
     app.add_handler(ChosenInlineResultHandler(chosen_result))
 
