@@ -25,13 +25,14 @@ curl https://offici5l-fcetool.hf.space/extract \
   -H "Content-Type: application/json" \
   -d '{"url": "ROM_URL", "images": "boot.img"}'
 ```
-**API Supported images only:** `boot.img`, `init_boot.img`, `dtbo.img`, `super_empty.img`, `vbmeta.img`, `vendor_boot.img`, `vendor_kernel_boot.img`, `preloader.img`, `recovery.img`
 
 ## Telegram Usage
 Type @fcetoolbot <ROM_URL> <IMAGE_NAME> in any chat
 
 ## Web Interface
 https://offici5l.github.io/fcetool
+
+[API/Telegram/Web Supported only!](https://github.com/offici5l/fcetool/blob/main/api%2Fapp.py#L37)
 
 ___
 
