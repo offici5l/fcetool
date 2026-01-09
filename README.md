@@ -32,7 +32,9 @@ Type @fcetoolbot <ROM_URL> <IMAGE_NAME> in any chat
 ## Web Interface
 https://offici5l.github.io/fcetool
 
-[API/Telegram/Web Supported only!](https://github.com/offici5l/fcetool/blob/main/api%2Fapp.py#L37)
+___
+
+[ ⚠️ API/Telegram/Web Supported only!](https://github.com/offici5l/fcetool/blob/main/api%2Fapp.py#L37)
 
 ___
 
