@@ -1,17 +1,51 @@
-# FCE Tool
-**Firmware Content Extractor - Extract specific files from remote ROM.ZIP archives without downloading the complete ROM**
+<div align="center">
 
-## Installation
-```bash
-pip install fcetool
+<img src="logo.svg" width="64" height="64">
+
+**Firmware Content Extractor**
+
+**Extract specific files from remote ROM.ZIP archives without downloading the full ROM**
+
+</div>
+
+---
+
+## Web Interface
+
+**https://offici5l.github.io/fcetool**
+
+---
+
+### Telegram Bot
+```
+@fcetoolbot <ROM_URL> <IMAGE_NAME>
 ```
 
-## CLI Usage
+---
+
+### API
 ```bash
+curl https://offici5l-fcetool.hf.space/extract \
+  -H "Content-Type: application/json" \
+  -d '{"url": "ROM_URL", "images": "boot.img"}'
+```
+
+---
+
+> **⚠️ Note:** Web, Telegram, and API support `.img` files only.
+> For other file types, use:
+
+---
+
+### CLI
+```bash
+pip install fcetool
 fcetool <URL> <FILENAME>
 ```
 
-## Usage in Python Code
+---
+
+### Python
 ```python
 import asyncio
 from firmware_content_extractor import extract_async
@@ -19,29 +53,10 @@ from firmware_content_extractor import extract_async
 asyncio.run(extract_async("URL", "boot.img", "./output"))
 ```
 
-## API Usage
-```bash
-curl https://offici5l-fcetool.hf.space/extract \
-  -H "Content-Type: application/json" \
-  -d '{"url": "ROM_URL", "images": "boot.img"}'
-```
-
-## Telegram Usage
-Type @fcetoolbot <ROM_URL> <IMAGE_NAME> in any chat
-
-## Web Interface
-https://offici5l.github.io/fcetool
-
-___
-
-[ ⚠️ API/Telegram/Web Supported only!](https://github.com/offici5l/fcetool/blob/main/api%2Fapp.py#L37)
-
-___
+---
 
 <div align="center">
 
-[![View Code Wiki](https://www.gstatic.com/_/boq-sdlc-agents-ui/_/r/YUi5dj2UWvE.svg)](https://codewiki.google/github.com/offici5l/fce)
-
-![MIT License](https://img.shields.io/badge/License-MIT-green.svg)
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 </div>
