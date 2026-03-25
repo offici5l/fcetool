@@ -17,10 +17,7 @@
 ---
 
 ### Telegram Bot
-```
-@fcetoolbot <ROM_URL> <IMAGE_NAME>
-```
-
+**https://t.me/fcetoolbot**
 ---
 
 ### API
