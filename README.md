@@ -25,7 +25,7 @@
 ```bash
 curl https://offici5l-fcetool.hf.space/extract \
   -H "Content-Type: application/json" \
-  -d '{"url": "ROM_URL", "images": "boot.img"}'
+  -d '{"url": "ROM_URL", "target": "boot.img"}'
 ```
 
 ---
