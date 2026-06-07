@@ -12,44 +12,30 @@
 
 ### Web Interface
 
+> **⚠️ Note:** support `.img` files only.
+> For other file types, use [CLI](#cli)
+
 **https://offici5l.github.io/fcetool**
 
 ---
 
-### Telegram Bot
-**https://t.me/fcetoolbot**
-
----
-
-### API
-```bash
-curl https://offici5l-fcetool.hf.space/extract \
-  -H "Content-Type: application/json" \
-  -d '{"url": "ROM_URL", "target": "boot.img"}'
-```
-
----
-
-> **⚠️ Note:** Web, Telegram, and API support `.img` files only.
-> For other file types, use:
-
----
-
 ### CLI
-```bash
+
+**Installation**
+
+```sh
 pip install fcetool
-fcetool <URL> <FILENAME>
 ```
 
----
+**Usage**
 
-### Python
-```python
-import asyncio
-from firmware_content_extractor import extract_async
-
-asyncio.run(extract_async("URL", "boot.img", "./output"))
+```sh
+fcetool <URL> <FILENAME> <OUTPUT_DIR>
 ```
+
+- `URL`: URL of the ROM/ZIP
+- `FILENAME`: Target filename to extract
+- `OUTPUT_DIR` *(optional)*: Output directory (default: `.`)
 
 ---
 
