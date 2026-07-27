@@ -19,10 +19,10 @@ authors = [
 
 
 [project.urls]
-Repository = "https://github.com/offici5l/fce"
+Repository = "https://github.com/fcetool"
 
 [project.scripts]
-fcetool = "firmware_content_extractor.cli:main"
+fcetool = "fcetool.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
