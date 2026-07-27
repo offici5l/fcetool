@@ -1,6 +1,0 @@
-fastapi
-uvicorn
-slowapi
-huggingface_hub
-requests
-fcetool
