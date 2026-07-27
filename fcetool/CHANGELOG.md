@@ -10,3 +10,7 @@
 ### Version 1.0.3:
 
 - Added Range request validation
+
+### Version 1.0.4:
+
+- Replace zstandard with pyzstd
