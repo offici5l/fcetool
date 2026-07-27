@@ -1,7 +1,7 @@
 import struct
 import bz2
 import lzma
-import zstandard as zstd
+import pyzstd
 import mmap
 import os
 import asyncio
@@ -94,7 +94,7 @@ class PayloadExtractor:
     def _decompress(self, data, type_):
         if type_ == 1: return bz2.decompress(data)
         elif type_ == 8: return lzma.decompress(data)
-        elif type_ == 14: return zstd.ZstdDecompressor().decompress(data)
+        elif type_ == 14: return pyzstd.decompress(data)
         return data
 
     async def extract(self, partition, out_path):
