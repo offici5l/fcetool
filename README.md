@@ -1,10 +1,10 @@
 <div align="center">
 
-<img src="logo.svg" width="64" height="64">
+<img src="logo.png" width="64" height="64">
 
 **Firmware Content Extractor**
 
-**Extract specific files from remote ROM.ZIP archives without downloading the full ROM**
+**Extract specific files from remote firmware.ZIP archives without downloading the full firmware**
 
 </div>
 
@@ -12,10 +12,11 @@
 
 ### Web Interface
 
-> **⚠️ Note:** support `.img` files only.
-> For other file types, use [CLI](#cli)
+> **⚠️ Note:** Supports all files except very large ones (like `system.img, system_ext.img, mi_ext.img, vendor.img, odm.img, product.img`) due to API resource limitations.
+> If a file type is not supported yet, please open an issue to request its addition.
+> For full support of all file types without limitations, use the [CLI](#cli).
 
-**https://offici5l.github.io/fcetool**
+**https://fcetool.github.io**
 
 ---
 
