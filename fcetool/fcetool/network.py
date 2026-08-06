@@ -29,8 +29,8 @@ class NetworkManager:
                 accept_ranges = resp.headers.get("Accept-Ranges", "none")
                 if accept_ranges == "none":
                     raise Exception(
-                        f"Server does not support Range requests. "
-                        f"Accept-Ranges: {accept_ranges}. "
+                        "Server does not support Range requests, so this file can't be "
+                        "extracted from without downloading it fully."
                     )
                 
                 if resp.status == 200:
@@ -42,9 +42,11 @@ class NetworkManager:
                     val = resp.headers.get("Content-Range", "").split("/")
                     self.file_size = int(val[1]) if len(val) > 1 else int(resp.headers.get("Content-Length", 0))
                     return self.file_size
-                raise Exception(f"HTTP {resp.status}")
-        except Exception as e:
-            raise Exception(f"Connection Failed: {e}")
+                raise Exception(f"Server returned HTTP {resp.status} for this URL.")
+        except aiohttp.ClientError as e:
+            raise Exception(f"Connection failed: {e}")
+        except asyncio.TimeoutError:
+            raise Exception("Connection timed out while reaching the server.")
 
     async def fetch_range(self, start, end, retries=3):
         headers = {"Range": f"bytes={start}-{end-1}"}

@@ -11,7 +11,11 @@ class ZipParser:
         tail = await self.client.fetch_range(file_size - read_size, file_size)
         
         eocd_pos = tail.rfind(b"PK\x05\x06")
-        if eocd_pos == -1: raise Exception("Invalid ZIP format")
+        if eocd_pos == -1:
+            raise Exception(
+                "Invalid ZIP file: the URL doesn't point to a valid ZIP archive "
+                "(check the link, or make sure it's a direct download link)."
+            )
         
         eocd = tail[eocd_pos:]
         cd_size = struct.unpack("<I", eocd[12:16])[0]

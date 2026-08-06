@@ -14,3 +14,7 @@
 ### Version 1.0.4:
 
 - Replace zstandard with pyzstd
+
+### Version 1.0.5:
+
+- fix: no longer dumps full traceback to logs, returns clear error messages instead
