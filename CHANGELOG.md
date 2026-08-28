@@ -18,3 +18,7 @@
 ### Version 1.0.5:
 
 - fix: no longer dumps full traceback to logs, returns clear error messages instead
+
+### Version 1.0.6:
+
+- Minor improvements
